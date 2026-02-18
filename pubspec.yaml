@@ -63,6 +63,30 @@ flutter:
     - assets/images/onboard1.png
     - assets/images/onboard2.png
     - assets/images/onboard3.png
+    - assets/images/register-icon.png
+    - assets/images/login-icon.png
+    - assets/images/forgotpassword-icon.png
+    - assets/images/passwordreset-icon.png
+    - assets/images/passwordreset1-icon.png
+    - assets/images/search_icon.png
+    - assets/images/uganda.jpg
+    - assets/images/uganda-equator.jpg
+    - assets/images/sipi-falls.jpg
+    - assets/images/settings-icon.png
+    - assets/images/review-icon.png
+    - assets/images/profile_icon.png
+    - assets/images/nearby.png
+    - assets/images/murchison-falls.jpg
+    - assets/images/murchison-falls-national-park.jpg
+    - assets/images/mount-rwenzori.jpg
+    - assets/images/home-icon.png
+    - assets/images/gorrillas.jpg
+    - assets/images/crested-crane.jpg
+    - assets/images/accommodation4.jpg
+    - assets/images/accommodation3.jpg
+    - assets/images/accommodation2.jpg
+    - assets/images/accommodation1.jpg
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -87,7 +111,14 @@ flutter:
     - family: IBMPlexSerif
       fonts:
         - asset: assets/fonts/IBMPlexSerif-Bold.ttf
+          weight: 300
+        - asset: assets/fonts/IBMPlexSerif-Bold.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSerif-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/IBMPlexSerif-Bold.ttf
           weight: 900
+
     - family: CormorantGaramond
       fonts:
         - asset: assets/fonts/Cormorant_Garamond/static/CormorantGaramond-Medium.ttf

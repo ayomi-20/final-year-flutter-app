@@ -23,7 +23,6 @@ MaterialPageRoute(builder: (context) => OnboardingScreen()),
 
 @override
 Widget build(BuildContext context) {
-  print("Using Material 3: ${Theme.of(context).useMaterial3}");
 return Scaffold(
 backgroundColor: const Color(0xFFE3EFE5),
 body: Center(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'authentication_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -14,7 +14,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(18),
         child: PageView(
           controller: _controller,
           onPageChanged: (index) {
@@ -24,18 +24,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Page 1: title above image
             buildPage(
               image: 'assets/images/onboard1.png',
-              title: 'Discover the Pearl Of Africa',
+              title: 'Discover the\nPearl of\nAfrica',
               description:
-                  'Explore Uganda`s wildlife, culture, destinations and travel services, all in one app.',
+                  'Explore Uganda`s wildlife,\n culture,\n destinations and travel services,\n all in one app.',
               isTitleAbove: true,
             ),
 
             // Page 2: default layout (image first)
             buildPage(
               image: 'assets/images/onboard2.png',
-              title: 'All in one Tourism Guide',
+              title: 'All in one \nTourism Guide',
               description:
-                  'Vehicles for hire;Accomodations;Restaurants and cuisine;Tourist Destinations;Certified Tour Guides',
+                  'Vehicles for hire\nAccomodations\nRestaurants and cuisine\nTourist Destinations\nCertified Tour Guides',
               isBulleted: true,
             ),
             // Page 3: title + description above image
@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               image: 'assets/images/onboard3.png',
               title: 'Plan Your Adventure with Eaze',
               description:
-                  'Find Trusted Guides, Comfortable Accomodations, Reliable Vehicles, and Explore destinations by regions effortlessly.',
+                  'Find Trusted Guides,\n Comfortable Accomodations,\n Reliable Vehicles, and Explore\n destinations by region\n effortlessly.',
               isTitleAndDescAbove: true,
             ),
           ],
@@ -54,7 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => HomeScreen()),
+                  MaterialPageRoute(builder: (_) => AuthenticationScreen()),
                 );
               },
               child: Container(
@@ -63,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   'Get Started',
-                  style: TextStyle(color:Color(0xFF0F3B2E), fontSize: 20),
+                  style: TextStyle(color: Color(0xFF0F3B2E), fontSize: 20),
                 ),
               ),
             )
@@ -78,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: 60,
                 alignment: Alignment.center,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       'Swipe to continue   ',
@@ -104,28 +104,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-
   Widget buildBullets(String description) {
-  List<String> items = description.split(';');
+    List<String> items = description.split('\n');
 
-  return Align(
-    alignment: Alignment.center, // center horizontally
-    child: FractionallySizedBox(
-      widthFactor: 0.2, // take 75% of the width (pushes bullets inward)
+    return Center(
+  child: ConstrainedBox(
+    constraints: BoxConstraints(
+      maxWidth: MediaQuery.of(context).size.width * 0.49, // 👈 KEY CONTROL
+    ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: items.map((item) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 2.5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "• ",
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Color(0xFF1C5E4A),
-                  ),
+                  style: TextStyle(fontSize: 20, color: Color(0xFF1C5E4A)),
                 ),
                 Expanded(
                   child: Text(
@@ -142,110 +139,72 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           );
         }).toList(),
       ),
-    ),
-  );
-}
-
-
- Widget buildPage({
-  required String image,
-  required String title,
-  required String description,
-  bool isTitleAbove = false,
-  bool isTitleAndDescAbove = false,
-  bool isBulleted = false,
-}) {
-  List<Widget> content = [];
-
-  // CASE 1: Title + description ABOVE image
-  if (isTitleAndDescAbove) {
-    content.add(
-      Text(
-        title,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'IBMPlexSerif',
-          fontSize: 30,
-          fontWeight: FontWeight.w900,
-          color: Color(0xFF0F3B2E),
-        ),
-      ),
-    );
-    content.add(SizedBox(height: 12));
-
-    // description (NOT bullets)
-    content.add(
-      Text(
-        description,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'CormorantGaramond',
-          fontSize: 24,
-          fontWeight: FontWeight.w300,
-          color: Color(0xFF1C5E4A),
-        ),
-      ),
-    );
-
-    content.add(SizedBox(height: 15));
-    content.add(Image.asset(image, height: 200));
-  }
-
-  // CASE 2: Title ABOVE image (Page 1)
-  else if (isTitleAbove) {
-    content.add(
-      Text(
-        title,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'IBMPlexSerif',
-          fontSize: 30,
-          fontWeight: FontWeight.w900,
-          color: Color(0xFF0F3B2E),
-        ),
-      ),
-    );
-    content.add(SizedBox(height: 20));
-    content.add(Image.asset(image, height: 200));
-    content.add(SizedBox(height: 15));
-
-    // description (NOT bullets on page 1)
-    content.add(
-      Text(
-        description,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'CormorantGaramond',
-          fontSize: 24,
-          fontWeight: FontWeight.w300,
-          color: Color(0xFF1C5E4A),
-        ),
-      ),
+    )
     );
   }
 
-  // CASE 3: Default layout (Page 2)
-  else {
-    content.add(Image.asset(image, height: 200));
-    content.add(SizedBox(height: 20));
+  Widget buildPage({
+    required String image,
+    required String title,
+    required String description,
+    bool isTitleAbove = false,
+    bool isTitleAndDescAbove = false,
+    bool isBulleted = false,
+  }) {
+    List<Widget> content = [];
 
-    content.add(
-      Text(
-        title,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'IBMPlexSerif',
-          fontSize: 30,
-          fontWeight: FontWeight.w900,
-          color: Color(0xFF0F3B2E),
+    // CASE 1: Title + description ABOVE image
+    if (isTitleAndDescAbove) {
+      content.add(
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'IBMPlexSerif',
+            fontSize: 37,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F3B2E),
+          ),
         ),
-      ),
-    );
-    content.add(SizedBox(height: 15));
+      );
+      content.add(SizedBox(height: 12));
 
-    if (isBulleted) {
-      content.add(buildBullets(description)); // centered bullets
-    } else {
+      // description (NOT bullets)
+      content.add(
+        Text(
+          description,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'CormorantGaramond',
+            fontSize: 24,
+            fontWeight: FontWeight.w300,
+            color: Color(0xFF1C5E4A),
+          ),
+        ),
+      );
+
+      content.add(SizedBox(height: 20));
+      content.add(Image.asset(image, height: 200));
+    }
+    // CASE 2: Title ABOVE image (Page 1)
+    else if (isTitleAbove) {
+      content.add(
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'IBMPlexSerif',
+            fontSize: 37,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F3B2E),
+          ),
+        ),
+      );
+      content.add(SizedBox(height: 20));
+      content.add(Image.asset(image, height: 200));
+      // content.add(SizedBox(height: 12));
+
+      // description (NOT bullets on page 1)
       content.add(
         Text(
           description,
@@ -259,15 +218,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       );
     }
-  }
+    // CASE 3: Default layout (Page 2)
+    else {
+      content.add(Image.asset(image, height: 200));
+      content.add(SizedBox(height: 20));
 
-  return Padding(
-  padding: const EdgeInsets.only(top: 60), // move content upward
-  child: Column(
-    mainAxisAlignment: MainAxisAlignment.start, // start = pushes content upward
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: content,
-  ),
-);
-}
+      content.add(
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'IBMPlexSerif',
+            fontSize: 37,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F3B2E),
+          ),
+        ),
+      );
+      content.add(SizedBox(height: 15));
+
+      if (isBulleted) {
+        content.add(buildBullets(description)); // centered bullets
+      } else {
+        content.add(
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
+              fontSize: 24,
+              fontWeight: FontWeight.w300,
+              color: Color(0xFF1C5E4A),
+            ),
+          ),
+        );
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 45), // move content upward
+      child: Column(
+        mainAxisAlignment:
+            MainAxisAlignment.start, // start = pushes content upward
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: content,
+      ),
+    );
+  }
 }
