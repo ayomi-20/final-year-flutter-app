@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'authentication_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
   @override
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
