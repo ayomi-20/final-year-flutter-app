@@ -18,20 +18,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'All in one\nTourism Guide',
       description: '',
       isBulleted: true,
+      useWhiteOverlay: false,
+      splitTitleAt: -1,
+      centerText: false,
+      topSpacerFlex: 2,
       iconItems: [
-        _IconItem(icon: 'assets/images/vehicles_for_hire_icon.png', label: 'Vehicles for hire'),
-        _IconItem(icon: 'assets/images/accomodations_icon.png', label: 'Accommodations'),
+        _IconItem(icon: 'assets/images/vehicles_for_hire_icon.png',       label: 'Vehicles for hire'),
+        _IconItem(icon: 'assets/images/accomodations_icon.png',           label: 'Accommodations'),
         _IconItem(icon: 'assets/images/restaurants_and_cuisine_icon.png', label: 'Restaurants and\n cuisine'),
-        _IconItem(icon: 'assets/images/tourist_destinations_icon.png', label: 'Tourist Destinations'),
-        _IconItem(icon: 'assets/images/certified_tour_guides_icon.png', label: 'Certified Tour\n Guides'),
+        _IconItem(icon: 'assets/images/tourist_destinations_icon.png',    label: 'Tourist Destinations'),
+        _IconItem(icon: 'assets/images/certified_tour_guides_icon.png',   label: 'Certified Tour\n Guides'),
       ],
     ),
     _OnboardData(
       image: 'assets/images/onboard2.png',
-      title: 'Discover the\nPearl of Africa',
+      title: 'Discover the Pearl of Africa',
       description:
           'Explore Uganda\'s wildlife, culture,\ndestinations and travel services,\nall in one app.',
       isBulleted: false,
+      useWhiteOverlay: true,
+      splitTitleAt: 13,
+      centerText: true,
+      topSpacerFlex: 12,
       iconItems: [],
     ),
     _OnboardData(
@@ -40,6 +48,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Find Trusted Guides, Comfortable\nAccommodations, Reliable Vehicles,\nand Explore destinations by region\neffortlessly.',
       isBulleted: false,
+      useWhiteOverlay: false,
+      splitTitleAt: -1,
+      centerText: true,
+      topSpacerFlex: 2,
       iconItems: [],
     ),
   ];
@@ -89,6 +101,10 @@ class _OnboardData {
   final String title;
   final String description;
   final bool isBulleted;
+  final bool useWhiteOverlay;
+  final int splitTitleAt;
+  final bool centerText;
+  final int topSpacerFlex;
   final List<_IconItem> iconItems;
 
   const _OnboardData({
@@ -96,6 +112,10 @@ class _OnboardData {
     required this.title,
     required this.description,
     required this.isBulleted,
+    required this.useWhiteOverlay,
+    required this.splitTitleAt,
+    required this.centerText,
+    required this.topSpacerFlex,
     required this.iconItems,
   });
 }
@@ -116,74 +136,131 @@ class _OnboardPage extends StatelessWidget {
     required this.onNext,
   });
 
+  Widget _buildTitle(double fontSize) {
+    final align = data.centerText ? TextAlign.center : TextAlign.left;
+
+    if (data.splitTitleAt < 0) {
+      return Text(
+        data.title,
+        textAlign: align,
+        style: TextStyle(
+          fontFamily: 'IBMPlexSerif',
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          height: 1.15,
+        ),
+      );
+    }
+
+    final blackPart = data.title.substring(0, data.splitTitleAt);
+    final greenPart = data.title.substring(data.splitTitleAt);
+
+    return RichText(
+      textAlign: align,
+      text: TextSpan(
+        style: TextStyle(
+          fontFamily: 'IBMPlexSerif',
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          height: 1.15,
+        ),
+        children: [
+          TextSpan(
+            text: blackPart,
+            style: const TextStyle(color: Colors.black),
+          ),
+          TextSpan(
+            text: greenPart,
+            style: const TextStyle(color: Color(0xFF1C5E4A)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final titleFontSize = (screenWidth * 0.072).clamp(22.0, 38.0);
+
+    final align = data.centerText
+        ? CrossAxisAlignment.center
+        : CrossAxisAlignment.start;
+    final textAlign =
+        data.centerText ? TextAlign.center : TextAlign.left;
+
+    final cardColor = data.useWhiteOverlay
+        ? Colors.white.withOpacity(0.65)
+        : Colors.black.withOpacity(0.45);
+    final cardBorder = data.useWhiteOverlay
+        ? Colors.white
+        : Colors.white.withOpacity(0.25);
+    final descColor = data.useWhiteOverlay
+        ? const Color(0xFF333333)
+        : const Color(0xDDFFFFFF);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Background image
+        // ── Background image ──
         Image.asset(data.image, fit: BoxFit.cover),
 
-        // ✅ UPDATED GRADIENT (fix)
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x66071F14), // light tint at top
-                Color(0xE6071F14), // strong tint at bottom
-              ],
-              stops: [0.0, 1.0],
-            ),
-          ),
-        ),
-
-        // ── Overlay content ──
+        // ── Content ──
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-                const Spacer(flex: 2),
+                Spacer(flex: data.topSpacerFlex),
 
                 // ── Content card ──
                 Container(
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 32),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
-                      width: 1,
-                    ),
+                    border: Border.all(color: cardBorder, width: 1),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data.title,
-                        style: const TextStyle(
-                          fontFamily: 'IBMPlexSerif',
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          height: 1.15,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
+  crossAxisAlignment: align,
+  children: [
+    // ── Curated icon (ONLY for screen 3) ──
+    if (data.title.contains('Plan Your'))
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Center(
+          child: Container(
+  width: 60,
+  height: 60,
+  padding: const EdgeInsets.all(10),
+  decoration: const BoxDecoration(
+    color: Colors.white,
+    shape: BoxShape.circle,
+  ),
+  child: Image.asset(
+    'assets/images/curated_icon.png',
+    fit: BoxFit.contain,
+  ),
+),
+        ),
+      ),
+
+    _buildTitle(titleFontSize),
+    const SizedBox(height: 14),
 
                       if (data.isBulleted && data.iconItems.isNotEmpty)
                         _IconList(items: data.iconItems)
                       else
                         Text(
                           data.description,
-                          style: const TextStyle(
+                          textAlign: textAlign,
+                          style: TextStyle(
                             fontFamily: 'CormorantGaramond',
-                            fontSize: 18,
-                            color: Color(0xDDFFFFFF),
-                            fontWeight: FontWeight.w300,
-                            height: 1.4,
+                            fontSize: 20,
+                            color: descColor,
+                            fontWeight: FontWeight.w700,
+                            height: 1.6,
                           ),
                         ),
                     ],
@@ -204,7 +281,7 @@ class _OnboardPage extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         color: currentPage == i
-                            ? Colors.white
+                            ? const Color(0xFF0F3B2E)
                             : Colors.white.withOpacity(0.45),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -218,9 +295,9 @@ class _OnboardPage extends StatelessWidget {
                 GestureDetector(
                   onTap: onNext,
                   child: Container(
-                    height: 54,
+                    height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: const Color(0xFF0F3B2E),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     alignment: Alignment.center,
@@ -232,12 +309,16 @@ class _OnboardPage extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: 'IBMPlexSerif',
                             fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F3B2E),
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_rounded, size: 18),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                       ],
                     ),
                   ),
@@ -279,30 +360,25 @@ class _IconList extends StatelessWidget {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: Image.asset(
-                      item.icon,
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.asset(item.icon, fit: BoxFit.contain),
                   ),
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: Text(
                       item.label,
                       style: const TextStyle(
                         fontFamily: 'CormorantGaramond',
-                        fontSize: 18,
+                        fontSize: 20,
                         color: Color(0xDDFFFFFF),
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w700,
                         height: 1.3,
                       ),
                     ),
                   ),
-
                   Image.asset(
                     _kTickIcon,
-                    width: 22,
-                    height: 22,
+                    width: 40,
+                    height: 40,
                     fit: BoxFit.contain,
                   ),
                 ],
