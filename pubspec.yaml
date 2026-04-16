@@ -68,6 +68,13 @@ flutter:
     - assets/images/onboard2.png
     - assets/images/onboard3.png
     - assets/images/auth_bg.png
+    - assets/images/login_bg.png
+    - assets/images/forgotpassword_bg.png
+    - assets/images/verify_code_bg.png
+    - assets/images/car_hire_icon.png
+    - assets/images/eat_and_drink_icon.png
+    - assets/images/wildlife_icon1.png
+    - assets/images/stays_icon.png
     - assets/images/accomodations_icon.png
     - assets/images/certified_tour_guides_icon.png
     - assets/images/curated_icon.png

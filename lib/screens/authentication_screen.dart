@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 // ─── Background images per auth step ───
 const _kAuthBg = 'assets/images/auth_bg.png';
-const _kForgotBg = 'assets/images/forgot_bg.png';
+// const _kForgotBg = 'assets/images/forgot_bg.png';
+const _kLoginBg = 'assets/images/login_bg.png';
+const _kForgotStep1Bg = 'assets/images/forgotpassword_bg.png';
+const _kVerifyBg = 'assets/images/verify_code_bg.png';
+const _kResetBg = 'assets/images/crested-crane.jpg';
 
 class AuthenticationScreen extends StatefulWidget {
   const AuthenticationScreen({super.key});
@@ -66,13 +71,20 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
 }
 
 // ─────────────────── Auth Card (glass overlay) ───────────────────
+// ─────────────────── Auth Card (glass overlay) ───────────────────
 class AuthCard extends StatelessWidget {
   final Widget child;
   final String bgImage;
+  final Widget? header;
+  final bool solidOverlay;
+  final Widget? footer;
   const AuthCard({
     super.key,
     required this.child,
     this.bgImage = _kAuthBg,
+    this.header,
+    this.solidOverlay = false,
+    this.footer,
   });
 
   @override
@@ -80,43 +92,45 @@ class AuthCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Background photo
         Image.asset(bgImage, fit: BoxFit.cover),
-
-        // Dark gradient overlay
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x880F3B2E),
-                Color(0xF00F3B2E),
-              ],
-              stops: [0.0, 1.0],
-            ),
-          ),
-        ),
-
-        // Scrollable card content
         SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.40),
+          child: Column(
+            children: [
+              if (header != null)
+                Padding(
+                  // Standard padding (allows specific pages to override if they wrap their content)
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 20),
+                  child: header!,
+                ),
+
+              // 🔥 Overlay (centered)
+              Expanded(
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: solidOverlay
+                          ? const Color(0xFF0F3B2E).withOpacity(0.65)
+                          : Colors.white.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(24),
+                      border: solidOverlay
+                          ? null
+                          : Border.all(color: Colors.white.withOpacity(0.40)),
+                    ),
+                    child: child,
                   ),
                 ),
-                child: child,
               ),
-            ),
+
+              // Footer
+              if (footer != null)
+                Padding(
+                  // Standard padding
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: footer!,
+                ),
+            ],
           ),
         ),
       ],
@@ -134,6 +148,8 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _contactFocus = FocusNode();
+
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _email = TextEditingController();
@@ -158,7 +174,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final bool success =
         res['message']?.toString().toLowerCase().contains('successful') ??
-            false;
+        false;
 
     _showDialog(
       title: success ? 'Registered!' : 'Error',
@@ -170,78 +186,150 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return AuthCard(
+      header: const _AuthHeader(
+        // ← move header here
+        title: 'Register Account',
+        subtitle: 'Create a new account',
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _AuthHeader(
-            title: 'Register Account',
-            subtitle: 'Create a new account',
-          ),
-          const SizedBox(height: 15),
+          // ← remove the _AuthHeader and its SizedBox from here
+          const SizedBox(height: 8), // small top breathing room
           Row(
+            children: [
+              Expanded(
+                child: LabeledField(
+                  label: 'First Name',
+                  field: AuthField(controller: _firstName, hint: 'John'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: LabeledField(
+                  label: 'Last Name',
+                  field: AuthField(controller: _lastName, hint: 'Doe'),
+                ),
+              ),
+            ],
+          ),
+
+          LabeledField(
+            label: 'Email Address',
+            field: AuthField(controller: _email, hint: 'john.doe@example.com'),
+          ),
+
+          // 📞 Contact field with country code
+          LabeledField(
+            label: 'Contact',
+            field: Row(
               children: [
-                Expanded(
-                  child: LabeledField(
-                    label: 'First Name',
-                    field: AuthField(controller: _firstName, hint: 'John'),
+                Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '+256',
+                    style: TextStyle(
+                      color: Color(0xFF0F3B2E),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: LabeledField(
-                    label: 'Last Name',
-                    field: AuthField(controller: _lastName, hint: 'Doe'),
+                  child: SizedBox(
+                    height: 48,
+                    child: TextField(
+                      controller: _contact,
+                      focusNode: _contactFocus, // ✅ YOU ADD THIS
+                      style: const TextStyle(color: Color(0xFF0F3B2E)),
+                      enableSuggestions: false,
+                      autocorrect: false,
+                      keyboardType: TextInputType.phone,
+                      readOnly: false,
+                      decoration: InputDecoration(
+                        hintText: '770 000000',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'IBMPlexSerif',
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.25),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
+          ),
 
-            LabeledField(
-              label: 'Email Address',
-              field: AuthField(controller: _email, hint: 'john.doe@example.com'),
+          LabeledField(
+            label: 'Password',
+            field: AuthField(
+              controller: _password,
+              hint: '********',
+              obscure: true,
+              keyboardType: TextInputType.text,
             ),
-
-            // 📞 Contact field with country code
-            LabeledField(
-              label: 'Contact',
-              field: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F3F2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text('+256'),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AuthField(
-                      controller: _contact,
-                      hint: '770 000000',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            LabeledField(
-              label: 'Password',
-              field: AuthField(
-                controller: _password,
-                hint: '********',
-                obscure: true,
-              ),
-            ),
+          ),
           const SizedBox(height: 8),
           authButton('Sign Up →', onTap: _handleRegister, loading: _loading),
           const SizedBox(height: 16),
-          GestureDetector(
-            onTap: widget.onRegistered,
-            child: const Text(
-              'Already have an account?  Login',
-              style: kLink,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Already have an account? ',
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSerif',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color.fromARGB(255, 58, 58, 58),
+                  shadows: [
+                    Shadow(
+                      blurRadius: 6,
+                      color: Colors.black26,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: widget.onRegistered,
+                child: const Text('Login', style: kLink),
+              ),
+            ],
           ),
         ],
       ),
@@ -270,6 +358,12 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _contactFocus.dispose();
+    super.dispose();
+  }
 }
 
 // ─────────────────── Login Page ───────────────────
@@ -288,7 +382,7 @@ class LoginPage extends StatefulWidget {
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
-
+// ______________________________ Login ________________________ //
 class _LoginPageState extends State<LoginPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -313,8 +407,9 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Code sent'),
-          content:
-              Text(res['message'] ?? 'Check your email for the login code.'),
+          content: Text(
+            res['message'] ?? 'Check your email for the login code.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -345,31 +440,118 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthCard(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const _AuthHeader(
-            icon: Icons.lock_open_rounded,
-            title: 'Welcome Back',
-            subtitle: 'Sign in to continue',
-          ),
-          const SizedBox(height: 20),
-          AuthField(hint: 'Email', controller: _email),
-          AuthField(hint: 'Password', controller: _password, obscure: true),
-          const SizedBox(height: 8),
-          authButton('Sign In →', onTap: _handleLogin, loading: _loading),
-          const SizedBox(height: 14),
-          GestureDetector(
-            onTap: widget.onForgotTap,
-            child: const Text('Forgot Password?', style: kLink),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: widget.onRegisterTap,
-            child: const Text(
-              "Don't have an account?  Register",
-              style: kLink,
+          // 1. Background Image
+          Image.asset(_kLoginBg, fit: BoxFit.cover),
+
+          // 2. Content Layout
+          SafeArea(
+            child: Stack(
+              children: [
+                // HEADER: Manually positioned lower down
+                Positioned(
+                  top: 75, // Moves header DOWN towards the overlay
+                  left: 24,
+                  right: 24,
+                  child: const _AuthHeader(
+                    showIcon: false,
+                    title: 'Welcome Back',
+                    subtitle: 'Sign in to continue',
+                    light: true,
+                  ),
+                ),
+
+                // GREEN OVERLAY: Manually positioned higher up
+                // Using Align with -0.2 moves it 20% up the screen
+                Align(
+                  alignment: const Alignment(0, -0.05),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F3B2E).withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 4),
+                        LabeledField(
+                          label: 'Email',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                              hint: 'john.doe@example.com',
+                              controller: _email),
+                        ),
+                        LabeledField(
+                          label: 'Password',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '********',
+                            controller: _password,
+                            obscure: true,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: widget.onForgotTap,
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        authButton('Sign In →',
+                            onTap: _handleLogin, loading: _loading),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // FOOTER: Manually positioned higher up
+                Positioned(
+                  bottom: 120, // Moves footer UP towards the overlay
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexSerif',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.white,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: widget.onRegisterTap,
+                        child: const Text(
+                          'Register',
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSerif',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -377,7 +559,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 // ─────────────────── OTP Page ───────────────────
 class OtpPage extends StatefulWidget {
   final ValueNotifier<String> emailNotifier;
@@ -399,11 +580,11 @@ class _OtpPageState extends State<OtpPage> {
   final _otp = TextEditingController();
   final _auth = AuthService();
   bool _loading = false;
-
+  
   void _handleVerify() async {
     if (_otp.text.trim().length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the 6-digit code')),
+        const SnackBar(content: Text('Please enter 6-digit code')),
       );
       return;
     }
@@ -428,8 +609,18 @@ class _OtpPageState extends State<OtpPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              if (success) widget.onVerified();
+              Navigator.pop(context); // Close the dialog
+              
+              if (success) {
+                // NAVIGATE TO HOME SCREEN DIRECTLY FROM HERE
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                );
+                
+                // Optional: Call parent callback if it does any cleanup
+                widget.onVerified(); 
+              }
             },
             child: const Text('OK'),
           ),
@@ -438,75 +629,164 @@ class _OtpPageState extends State<OtpPage> {
     );
   }
 
+  void _handleResend() async {
+    // Note: You may need to implement a 'resendLoginOtp' method in your AuthService
+    // or call the login method again if your backend supports it without password re-entry.
+    
+    setState(() => _loading = true);
+    
+    // Mocking API call for UI demonstration
+    // await _auth.resendOtp({'email': widget.emailNotifier.value}); 
+    await Future.delayed(const Duration(seconds: 1));
+
+    setState(() => _loading = false);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Code sent')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AuthCard(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const Icon(
-            Icons.mark_email_read_outlined,
-            size: 64,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 12),
-          const Text('Check your email', style: kHeading),
-          const SizedBox(height: 6),
-          ValueListenableBuilder<String>(
-            valueListenable: widget.emailNotifier,
-            builder: (_, email, __) => Text(
-              'We sent a 6-digit code to\n$email',
-              textAlign: TextAlign.center,
-              style: kSubHeading,
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _otp,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 12,
-              color: Colors.white,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: '------',
-              hintStyle: TextStyle(
-                letterSpacing: 12,
-                color: Colors.white.withOpacity(0.4),
-              ),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.25),
+          // 1. Background Image
+          Image.asset(_kAuthBg, fit: BoxFit.cover),
+
+          // 2. Content Layout
+          SafeArea(
+            child: Stack(
+              children: [
+                // HEADER: Positioned at top
+                Positioned(
+                  top: 200,
+                  left: 24,
+                  right: 24,
+                  child: Column(
+                    children: [
+                      Text(
+                        'Check your email',
+                        style: kHeading.copyWith(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      ValueListenableBuilder<String>(
+                        valueListenable: widget.emailNotifier,
+                        builder: (_, email, _) => Text(
+                          'We sent a 6-digit code to\n$email',
+                          textAlign: TextAlign.center,
+                          style: kSubHeading.copyWith(color: Colors.white70),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.25),
+
+                // GREEN OVERLAY: Centered
+                Align(
+                  alignment: const Alignment(0, 0.2),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F3B2E).withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // OTP Input Field (White box on green overlay)
+                        TextField(
+                          controller: _otp,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F3B2E),
+                            letterSpacing: 4,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '------',
+                            hintStyle: TextStyle(
+                              letterSpacing: 4,
+                              color: Colors.grey.shade400,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        authButton('Verify Code →',
+                            onTap: _handleVerify, loading: _loading),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+
+                // FOOTER: Positioned at bottom
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 160),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Didn't receive code? ",
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSerif',
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _loading ? null : _handleResend,
+                          child: Text(
+                            'Resend',
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSerif',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _loading ? Colors.white54 : Colors.white,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-          authButton('Verify Code →',
-              onTap: _handleVerify, loading: _loading),
-          const SizedBox(height: 10),
-          authButton('Back', onTap: widget.onBack, outlined: true),
         ],
       ),
     );
   }
 }
 
-// ─────────────────── Forgot Password ───────────────────
+
+// Forgot Password 
 class ForgotPasswordPage extends StatefulWidget {
   final VoidCallback onBack;
   const ForgotPasswordPage({super.key, required this.onBack});
@@ -521,10 +801,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _pendingContact = ValueNotifier<String>('');
 
   void _goToStep(int step) => _fpController.animateToPage(
-        step,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
+    step,
+    duration: const Duration(milliseconds: 400),
+    curve: Curves.easeInOut,
+  );
 
   @override
   void dispose() {
@@ -610,8 +890,7 @@ class _ForgotStep1State extends State<_ForgotStep1> {
             onPressed: () {
               Navigator.pop(context);
               if (success) {
-                widget.onCodeSent(
-                    _email.text.trim(), _contact.text.trim());
+                widget.onCodeSent(_email.text.trim(), _contact.text.trim());
               }
             },
             child: const Text('OK'),
@@ -623,24 +902,113 @@ class _ForgotStep1State extends State<_ForgotStep1> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthCard(
-      bgImage: _kForgotBg,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const _AuthHeader(
-            icon: Icons.lock_reset_rounded,
-            title: 'Forgot Password?',
-            subtitle:
-                'Enter your email address and we will\nsend your password reset code.',
+          // 1. Background Image
+          Image.asset(_kForgotStep1Bg, fit: BoxFit.cover),
+
+          // 2. Content Layout
+          SafeArea(
+            child: Stack(
+              children: [
+                // HEADER: Manually positioned lower down (closer to overlay)
+                Positioned(
+                  top: 80, // Adjusted to be lower than default top padding
+                  left: 24,
+                  right: 24,
+                  child: _AuthHeader(
+                    showIcon: false,
+                    title: 'Forgot Password?',
+                    subtitle:
+                        'Enter your email address and we will\nsend your password reset code.',
+                    light: true, // Makes description text white
+                  ),
+                ),
+
+                // GREEN OVERLAY: Centered
+                Align(
+                  alignment: const Alignment(0, 0.1), // Slightly lower to center visually with new header pos
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F3B2E).withOpacity(0.65), // Green Overlay
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Email Field
+                        LabeledField(
+                          label: 'Email',
+                          labelColor: Colors.white, // Label needs to be white on green
+                          field: AuthField(
+                            hint: 'john.doe@example.com',
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                        ),
+
+                        // Contact Field
+                        LabeledField(
+                          label: 'Contact',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '+256 770 000000',
+                            controller: _contact,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Green Button
+                        authButton('Send Code →',
+                            onTap: _handleSendCode, loading: _loading),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // FOOTER: Positioned below the green overlay
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 100),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Remember your password?',
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSerif',
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: widget.onBack,
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSerif',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          AuthField(hint: 'Email', controller: _email),
-          AuthField(hint: 'Contact', controller: _contact),
-          authButton('Send Code →',
-              onTap: _handleSendCode, loading: _loading),
-          const SizedBox(height: 10),
-          authButton('Back', onTap: widget.onBack, outlined: true),
         ],
       ),
     );
@@ -679,6 +1047,7 @@ class _ForgotStep2State extends State<_ForgotStep2> {
     _contact.text = widget.contactNotifier.value;
   }
 
+  // Logic to handle verification
   void _handleVerify() async {
     if (_code.text.trim().length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -716,27 +1085,140 @@ class _ForgotStep2State extends State<_ForgotStep2> {
     );
   }
 
+  // Logic to resend code
+  void _handleResend() async {
+    setState(() => _loading = true);
+    final res = await _auth.forgotPassword({
+      'email': _email.text.trim(),
+      'contact': _contact.text.trim(),
+    });
+    setState(() => _loading = false);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(res['message'] ?? 'Code sent')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AuthCard(
-      bgImage: _kForgotBg,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const _AuthHeader(
-            icon: Icons.verified_user_rounded,
-            title: 'Verify Code',
-            subtitle:
-                'Enter your login credentials\nand your password reset code.',
+          // 1. Background Image
+          Image.asset(_kVerifyBg, fit: BoxFit.cover),
+
+          // 2. Content Layout
+          SafeArea(
+            child: Stack(
+              children: [
+                // HEADER
+                Positioned(
+                  top: 60,
+                  left: 24,
+                  right: 24,
+                  child: _AuthHeader(
+                    showIcon: false,
+                    title: 'Verify Code',
+                    subtitle:
+                        'Enter the six - digit code sent to your\nemail/direct contact to proceed.',
+                    light: true,
+                  ),
+                ),
+
+                // GREEN OVERLAY
+                Align(
+                  alignment: const Alignment(0, 0.25),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 247, 248, 248).withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Reset Code Field
+                        LabeledField(
+                          label: 'Reset Code',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '------',
+                            controller: _code,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+
+                        // Email Field
+                        LabeledField(
+                          label: 'Email',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: 'john.doe@example.com',
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                        ),
+
+                        // Contact Field
+                        LabeledField(
+                          label: 'Contact',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '+256 770 000000',
+                            controller: _contact,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Verify Button
+                        authButton('Verify Code →',
+                            onTap: _handleVerify, loading: _loading),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // FOOTER
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 70),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Didn't receive a code? ",
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSerif',
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _loading ? null : _handleResend,
+                          child: Text(
+                            'Resend',
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSerif',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _loading ? Colors.white54 : Colors.white,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          AuthField(hint: 'Email', controller: _email),
-          AuthField(hint: 'Contact', controller: _contact),
-          AuthField(hint: 'Code', controller: _code),
-          authButton('Verify Code →',
-              onTap: _handleVerify, loading: _loading),
-          const SizedBox(height: 10),
-          authButton('Back', onTap: widget.onBack, outlined: true),
         ],
       ),
     );
@@ -775,15 +1257,14 @@ class _ForgotStep3State extends State<_ForgotStep3> {
       return;
     }
     if (_newPassword.text != _confirmPassword.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
     if (_newPassword.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Password must be at least 6 characters')),
+        const SnackBar(content: Text('Password must be at least 6 characters')),
       );
       return;
     }
@@ -799,7 +1280,7 @@ class _ForgotStep3State extends State<_ForgotStep3> {
 
     final bool success =
         res['message']?.toString().toLowerCase().contains('successful') ??
-            false;
+        false;
 
     showDialog(
       context: context,
@@ -821,37 +1302,117 @@ class _ForgotStep3State extends State<_ForgotStep3> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthCard(
-      bgImage: _kForgotBg,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const _AuthHeader(
-            icon: Icons.lock_rounded,
-            title: 'Reset Password',
-            subtitle: 'Enter your new password\nand confirm it.',
+          // 1. Background Image
+          Image.asset(_kResetBg, fit: BoxFit.cover),
+
+          // 2. Content Layout
+          SafeArea(
+            child: Stack(
+              children: [
+                // HEADER
+                Positioned(
+                  top: 70,
+                  left: 24,
+                  right: 24,
+                  child: _AuthHeader(
+                    showIcon: false,
+                    title: 'Reset Password',
+                    subtitle: 'Enter your new password and confirm it.',
+                    light: true,
+                  ),
+                ),
+
+                // GREEN OVERLAY
+                Align(
+                  alignment: const Alignment(0, 0.2),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 244, 248, 247).withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // New Password Field
+                       LabeledField(
+                          label: ' New Password',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '********',
+                            controller: _newPassword,
+                            obscure: true,
+                          ),
+                        ),
+
+                        // Confirm Password Field
+                        LabeledField(
+                          label: 'Confirm Password',
+                          labelColor: Colors.white,
+                          field: AuthField(
+                            hint: '********',
+                            controller: _confirmPassword,
+                            obscure: true,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Submit Button
+                        authButton('Submit >', onTap: _handleReset, loading: _loading),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // FOOTER
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 90),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Remember your password?',
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSerif',
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: widget.onBack,
+                          child: const Text(
+                            'Log in',
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSerif',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          AuthField(
-              hint: 'Enter new password',
-              controller: _newPassword,
-              obscure: true),
-          AuthField(
-              hint: 'Confirm password',
-              controller: _confirmPassword,
-              obscure: true),
-          authButton('Submit →', onTap: _handleReset, loading: _loading),
-          const SizedBox(height: 10),
-          authButton('Back', onTap: widget.onBack, outlined: true),
-          const SizedBox(height: 10),
-          const Text('You can now log in  Login', style: kLink),
         ],
       ),
     );
   }
 }
-
-// ─────────────────── Shared Styles ───────────────────
+//  Shared Styles 
 const kHeading = TextStyle(
   fontFamily: 'IBMPlexSerif',
   fontSize: 26,
@@ -865,13 +1426,12 @@ const kSubHeading = TextStyle(
   fontWeight: FontWeight.w400,
   color: Colors.black54, // softer text
 );
-
 const kLink = TextStyle(
   fontFamily: 'IBMPlexSerif',
   fontSize: 14,
   fontWeight: FontWeight.w500,
   color: Color(0xFF0F3B2E),
-  decoration: TextDecoration.underline,
+  decoration: TextDecoration.none,
 );
 
 // ─────────────────── Auth Header Widget ───────────────────
@@ -879,38 +1439,59 @@ class _AuthHeader extends StatelessWidget {
   final IconData? icon;
   final String title;
   final String subtitle;
+  final bool showIcon; // NEW
+  final bool light;
 
   const _AuthHeader({
-  this.icon,
-  required this.title,
-  required this.subtitle,
-});
+    super.key,
+    this.icon,
+    required this.title,
+    required this.subtitle,
+    this.showIcon = true,
+    this.light = false, // default = keep old behavior
+  });
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final titleStyle = kHeading.copyWith(
+      color: light ? Colors.white : const Color(0xFF0F3B2E),
+    );
+    final subtitleStyle = kSubHeading.copyWith(
+      color: light ? Colors.white70 : Colors.black54,
+    );
+
     return Column(
       children: [
-        if (icon != null) ...[
-          Icon(icon, size: 56, color: const Color(0xFF0F3B2E)),
+        if (showIcon && icon != null) ...[
+          Icon(
+            icon,
+            size: 56,
+            color: light ? Colors.white : const Color(0xFF0F3B2E),
+          ),
           const SizedBox(height: 12),
         ],
-        Text(title, style: kHeading, textAlign: TextAlign.center),
+        Text(title, style: titleStyle, textAlign: TextAlign.center),
         const SizedBox(height: 6),
-        Text(subtitle, style: kSubHeading, textAlign: TextAlign.center),
+        Text(subtitle, style: subtitleStyle, textAlign: TextAlign.center),
       ],
     );
   }
 }
 
 // ─────────────────── Labeled Field ───────────────────
+//
+// ─────────────────── Labeled Field ───────────────────
 class LabeledField extends StatelessWidget {
   final String label;
   final Widget field;
+  final Color? labelColor; // NEW: optional label color
 
   const LabeledField({
     super.key,
     required this.label,
     required this.field,
+    this.labelColor, // defaults to null (uses original dark green)
   });
 
   @override
@@ -922,10 +1503,12 @@ class LabeledField extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF0F3B2E),
+              color:
+                  labelColor ??
+                  const Color(0xFF0F3B2E), // use labelColor if provided
             ),
           ),
           const SizedBox(height: 6),
@@ -941,12 +1524,14 @@ class AuthField extends StatefulWidget {
   final String hint;
   final TextEditingController? controller;
   final bool obscure;
+  final TextInputType keyboardType;
 
   const AuthField({
     super.key,
     required this.hint,
     this.controller,
     this.obscure = false,
+    this.keyboardType = TextInputType.text, // ← defaults to plain text keyboard
   });
 
   @override
@@ -955,6 +1540,7 @@ class AuthField extends StatefulWidget {
 
 class _AuthFieldState extends State<AuthField> {
   late bool _obscureText;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -963,52 +1549,72 @@ class _AuthFieldState extends State<AuthField> {
   }
 
   @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: widget.controller,
+        focusNode: _focusNode,
         obscureText: _obscureText,
+
+        keyboardType: widget.keyboardType,
+
         enableSuggestions: false,
         autocorrect: false,
+        enableIMEPersonalizedLearning: false,
+
+        textCapitalization: TextCapitalization.none, // 🔥 IMPORTANT FIX
+        textInputAction: TextInputAction.done,
+
+        enableInteractiveSelection: false, // 🔥 prevents clipboard/image strip
+
         style: const TextStyle(color: Color(0xFF0F3B2E)),
         decoration: InputDecoration(
           hintText: widget.hint,
           hintStyle: const TextStyle(
-          fontFamily: 'IBMPlexSerif',
-          color: Colors.grey,
-          fontWeight: FontWeight.w400,
-          fontSize: 14,
+            fontFamily: 'IBMPlexSerif',
+            color: Colors.grey,
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
           ),
           filled: true,
-          fillColor: const Color(0xFFF1F3F2),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: Colors.white.withOpacity(0.25)),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: Colors.white.withOpacity(0.25)),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white, width: 1.5),
           ),
           suffixIcon: widget.obscure
-              ? IconButton(
-                  icon: Icon(
-                    _obscureText
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    color: Colors.white54,
-                    size: 20,
+              ? ExcludeFocus(
+                  child: Focus(
+                    canRequestFocus: false,
+                    child: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: const Color(0xFF0F3B2E),
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
+                    ),
                   ),
-                  onPressed: () =>
-                      setState(() => _obscureText = !_obscureText),
                 )
               : null,
         ),
@@ -1029,19 +1635,17 @@ Widget authButton(
     height: 50,
     child: ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor:
-          outlined ? Colors.transparent : const Color(0xFF0F3B2E),
+        backgroundColor: outlined
+            ? Colors.transparent
+            : const Color(0xFF0F3B2E),
 
-        foregroundColor:
-        Colors.white,
-            elevation: 0,
-            side: outlined
-                ? const BorderSide(color: Colors.white54)
-                : BorderSide.none,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        side: outlined
+            ? const BorderSide(color: Colors.white54)
+            : BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       onPressed: loading ? null : onTap,
       child: loading
           ? SizedBox(
@@ -1058,9 +1662,30 @@ Widget authButton(
                 fontFamily: 'IBMPlexSerif',
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: outlined ? Colors.white : const Color(0xFF0F3B2E),
+                color: Colors.white,
               ),
             ),
     ),
   );
+}
+
+class _LoginLinks extends StatelessWidget {
+  const _LoginLinks();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {}, // forgot password
+          child: const Text('Forgot Password?', style: kLink),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () {}, // register
+          child: const Text("Don't have an account? Register", style: kLink),
+        ),
+      ],
+    );
+  }
 }
