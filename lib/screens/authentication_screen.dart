@@ -159,30 +159,42 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _loading = false;
 
   void _handleRegister() async {
-    setState(() => _loading = true);
+  setState(() => _loading = true);
 
+  try {
     final res = await _auth.register({
-      'first_name': _firstName.text,
-      'last_name': _lastName.text,
-      'email': _email.text,
-      'contact': _contact.text,
+      'first_name': _firstName.text.trim(),
+      'last_name': _lastName.text.trim(),
+      'email': _email.text.trim(),
+      'contact': _contact.text.trim(),
       'password': _password.text,
     });
 
-    setState(() => _loading = false);
     if (!mounted) return;
 
     final bool success =
-        res['message']?.toString().toLowerCase().contains('successful') ??
-        false;
+        res['message']
+                ?.toString()
+                .toLowerCase()
+                .contains('successful') ??
+            false;
 
     _showDialog(
       title: success ? 'Registered!' : 'Error',
       message: res['message'] ?? 'Something went wrong',
       onOk: success ? widget.onRegistered : null,
     );
+  } catch (e) {
+    _showDialog(
+      title: 'Error',
+      message: 'Something went wrong: $e',
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return AuthCard(
