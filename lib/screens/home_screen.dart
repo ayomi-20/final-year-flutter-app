@@ -818,19 +818,17 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: _categories.length,
             itemBuilder: (_, i) {
               final cat = _categories[i];
-              final color = Color(
-                int.parse((cat['color'] as String).replaceFirst('#', '0xFF')),
-              );
+const color = Color(0xFF0F3B2E);
               return GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CategoryScreen(
-                      categorySlug: cat['slug'],
-                      categoryName: cat['name'],
-                    ),
-                  ),
-                ),
+             onTap: () => Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => CategoryScreen(
+      categorySlug: cat['slug'] as String?,
+      categoryName: (cat['name'] ?? 'Category') as String,
+    ),
+  ),
+),
                 child: Container(
                   width: 80,
                   margin: const EdgeInsets.only(right: 12),
@@ -843,7 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: color.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(_categoryIcon(cat['icon'] ?? ''), color: color, size: 28),
+                        child: Icon(_categoryIcon((cat['slug'] ?? '') as String), color: color, size: 28),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -1061,18 +1059,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Icon mapper ────────────────────────────────────────────────────────
   IconData _categoryIcon(String icon) {
-    switch (icon) {
-      case 'wildlife':         return Icons.pets_rounded;
-      case 'stays':            return Icons.hotel_rounded;
-      case 'car_hire':         return Icons.directions_car_rounded;
-      case 'restaurants':      return Icons.restaurant_rounded;
-      case 'certified_guides': return Icons.badge_rounded;
-      case 'adventure':        return Icons.hiking_rounded;
-      case 'culture':          return Icons.museum_rounded;
-      case 'water':            return Icons.pool_rounded;
-      default:                 return Icons.category_rounded;
-    }
+  switch (icon) {
+    case 'accommodations':      return Icons.hotel_rounded;
+    case 'vehicles-for-hire':   return Icons.directions_car_rounded;
+    case 'restaurants':         return Icons.restaurant_rounded;
+    case 'tour-guides':         return Icons.badge_rounded;
+    case 'tourist-destinations': return Icons.landscape_rounded;
+    default:                    return Icons.category_rounded;
   }
+}
 }
 
 // ── Featured Service Card ──────────────────────────────────────────────────
