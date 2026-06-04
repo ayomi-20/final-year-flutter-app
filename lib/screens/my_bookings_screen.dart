@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/booking_service.dart';
 import '../services/review_service.dart';
+import '../constants.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -467,8 +468,8 @@ class _BookingList extends StatelessWidget {
           // Thumbnail
           final imgs = service['images'];
           final imageUrl = (imgs is List && imgs.isNotEmpty)
-              ? 'http://10.0.2.2:8000/storage/${imgs[0]}'
-              : '';
+    ? '$kBaseUrl/images/${imgs[0]}'
+    : '';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 14),

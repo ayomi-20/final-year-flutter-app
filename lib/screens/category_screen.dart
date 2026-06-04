@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/dashboard_service.dart';
 import 'service_detail_screen.dart';
+import '../constants.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String? categorySlug;
@@ -121,12 +122,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   String _getFirstImage(dynamic service) {
-    final imgs = service['images'];
-    if (imgs is List && imgs.isNotEmpty) {
-      return 'http://10.0.2.2:8000/storage/${imgs[0]}';
-    }
-    return '';
+  final imgs = service['images'];
+  if (imgs is List && imgs.isNotEmpty) {
+    return '$kBaseUrl/images/${imgs[0]}';
   }
+  return '';
+}
 
   @override
   Widget build(BuildContext context) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/dashboard_service.dart';
 import '../services/auth_service.dart';
 import './booking_screen.dart';
+import '../constants.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final String serviceSlug;
@@ -36,7 +37,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   List<dynamic> get _reviews => _service?['reviews'] ?? [];
   List<dynamic> get _amenities => _service?['amenities'] ?? [];
 
-  String _imageUrl(String path) => 'http://10.0.2.2:8000/storage/$path';
+  String _imageUrl(String path) => '$kBaseUrl/images/$path';
 
   @override
   Widget build(BuildContext context) {

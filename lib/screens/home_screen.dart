@@ -583,6 +583,7 @@ import 'service_detail_screen.dart';
 import 'my_bookings_screen.dart';
 import 'category_screen.dart';
 import 'profile_screen.dart';
+import '../constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -617,6 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _dashboard.getHomeData(),
       _auth.getUser(),
     ]);
+    
     setState(() {
       _homeData  = results[0] as Map<String, dynamic>;
       _currentUser = results[1] as Map<String, dynamic>?;
@@ -630,12 +632,12 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> get _reviews    => _homeData['recent_reviews']  ?? [];
 
   String _getFirstImage(dynamic service) {
-    final imgs = service['images'];
-    if (imgs is List && imgs.isNotEmpty) {
-      return 'http://10.0.2.2:8000/storage/${imgs[0]}';
-    }
-    return '';
+  final imgs = service['images'];
+  if (imgs is List && imgs.isNotEmpty) {
+    return '$kBaseUrl/images/${imgs[0]}';
   }
+  return '';
+}
 
   @override
   void dispose() {
@@ -811,7 +813,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _sectionHeader('Categories', onSeeAll: null),
         SizedBox(
-          height: 100,
+          height: 110,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -830,13 +832,13 @@ const color = Color(0xFF0F3B2E);
   ),
 ),
                 child: Container(
-                  width: 80,
-                  margin: const EdgeInsets.only(right: 12),
+                width: 90,
+                margin: const EdgeInsets.only(right: 12),
                   child: Column(
                     children: [
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 64,
+                        height: 64,
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(16),
