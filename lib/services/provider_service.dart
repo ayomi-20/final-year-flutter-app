@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
+import 'dart:typed_data';
 
 class ProviderService {
   final String baseUrl = AuthService.baseUrl;
@@ -15,37 +16,22 @@ class ProviderService {
     };
   }
 
-  // ── Step 1: Personal details ───────────────────────────────────────────
-  Future<Map<String, dynamic>> registerStep1(Map<String, String> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/provider/register'),
-      headers: {'Accept': 'application/json'},
-      body: data,
-    );
-    final res = json.decode(response.body);
-    // Save token from step1
-    if (res['token'] != null) {
-      await _auth.saveToken(res['token']);
-    }
-    return res;
-  }
-
-  // ── Step 2: Business details ───────────────────────────────────────────
-  Future<Map<String, dynamic>> registerStep2(Map<String, String> data) async {
+  // Step 1: Register business info
+  Future<Map<String, dynamic>> register(Map<String, String> data) async {
     final headers = await _authHeaders;
     final response = await http.post(
-      Uri.parse('$baseUrl/provider/step2'),
+      Uri.parse('$baseUrl/provider/register'),
       headers: headers,
       body: data,
     );
     return json.decode(response.body);
   }
 
-  // ── Step 3: Upload documents (multipart) ──────────────────────────────
+  // Step 2: Upload documents using PlatformFile (from file_picker)
   Future<Map<String, dynamic>> uploadDocuments({
-    required List<File> documents,
-    File? logo,
-    File? coverPhoto,
+    PlatformFile? nationalId,
+    PlatformFile? tradingLicense,
+    PlatformFile? logo,
   }) async {
     final token = await _auth.getToken();
     final request = http.MultipartRequest(
@@ -56,20 +42,27 @@ class ProviderService {
     request.headers['Accept'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
 
-    for (int i = 0; i < documents.length; i++) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'documents[$i]',
-        documents[i].path,
+    if (nationalId?.bytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'documents[]',
+        nationalId!.bytes!,
+        filename: nationalId.name,
       ));
     }
 
-    if (logo != null) {
-      request.files.add(await http.MultipartFile.fromPath('logo', logo.path));
+    if (tradingLicense?.bytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'documents[]',
+        tradingLicense!.bytes!,
+        filename: tradingLicense.name,
+      ));
     }
-    if (coverPhoto != null) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'cover_photo',
-        coverPhoto.path,
+
+    if (logo?.bytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'logo',
+        logo!.bytes!,
+        filename: logo.name,
       ));
     }
 
@@ -78,8 +71,8 @@ class ProviderService {
     return json.decode(response.body);
   }
 
-  // ── Step 4: Submit for review ──────────────────────────────────────────
-  Future<Map<String, dynamic>> submitForReview() async {
+  // Step 3: Submit for review
+  Future<Map<String, dynamic>> submit() async {
     final headers = await _authHeaders;
     final response = await http.post(
       Uri.parse('$baseUrl/provider/submit'),
@@ -88,14 +81,47 @@ class ProviderService {
     return json.decode(response.body);
   }
 
-  // ── Provider: get own profile ──────────────────────────────────────────
-  Future<Map<String, dynamic>?> getMyProfile() async {
-    final headers = await _authHeaders;
-    final response = await http.get(
-      Uri.parse('$baseUrl/provider/profile'),
-      headers: headers,
-    );
-    if (response.statusCode == 200) return json.decode(response.body);
-    return null;
+  Future<Map<String, dynamic>> uploadDocumentsBytes({
+  Uint8List? nationalIdBytes,
+  String? nationalIdName,
+  Uint8List? tradingLicenseBytes,
+  String? tradingLicenseName,
+  Uint8List? logoBytes,
+  String? logoName,
+}) async {
+  final token = await _auth.getToken();
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse('$baseUrl/provider/documents'),
+  );
+
+  request.headers['Accept'] = 'application/json';
+  if (token != null) request.headers['Authorization'] = 'Bearer $token';
+
+  if (nationalIdBytes != null) {
+    request.files.add(http.MultipartFile.fromBytes(
+      'documents[]',
+      nationalIdBytes,
+      filename: nationalIdName ?? 'national_id.jpg',
+    ));
   }
+  if (tradingLicenseBytes != null) {
+    request.files.add(http.MultipartFile.fromBytes(
+      'documents[]',
+      tradingLicenseBytes,
+      filename: tradingLicenseName ?? 'trading_license.jpg',
+    ));
+  }
+  if (logoBytes != null) {
+    request.files.add(http.MultipartFile.fromBytes(
+      'logo',
+      logoBytes,
+      filename: logoName ?? 'logo.jpg',
+    ));
+  }
+
+  final streamed = await request.send();
+  final response = await http.Response.fromStream(streamed);
+  return json.decode(response.body);
+}
 }
