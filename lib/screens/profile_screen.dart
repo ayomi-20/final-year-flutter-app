@@ -46,8 +46,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String get _roleLabel {
-    final role = _user?['role']?['display_name'] as String?;
-    return role ?? 'Tourist';
+    final role = _user?['role'];
+    if (role == null) return 'Tourist';
+    // If role is an object with display_name
+    if (role is Map) {
+      return (role['display_name'] as String?) ?? 'Tourist';
+    }
+    // If role is a plain string
+    if (role is String) {
+      switch (role) {
+        case 'provider':
+          return 'Provider';
+        case 'admin':
+          return 'Admin';
+        default:
+          return 'Tourist';
+      }
+    }
+    return 'Tourist';
   }
 
   Future<void> _logout() async {
@@ -57,23 +73,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text(
           'Log Out',
           style: TextStyle(
-              fontFamily: 'IBMPlexSerif',
-              fontWeight: FontWeight.w700,
-              color: _green),
+            fontFamily: 'IBMPlexSerif',
+            fontWeight: FontWeight.w700,
+            color: _green,
+          ),
         ),
-        content:
-            const Text('Are you sure you want to log out?'),
+        content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _green),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Log Out',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -85,8 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-          builder: (_) => const AuthenticationScreen()),
+      MaterialPageRoute(builder: (_) => const AuthenticationScreen()),
       (_) => false,
     );
   }
@@ -122,7 +135,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        vertical: 28, horizontal: 20),
+                      vertical: 28,
+                      horizontal: 20,
+                    ),
                     decoration: BoxDecoration(
                       color: _green,
                       borderRadius: BorderRadius.circular(20),
@@ -155,12 +170,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Text(
                           _user?['email'] as String? ?? '',
                           style: const TextStyle(
-                              fontSize: 13, color: Colors.white70),
+                            fontSize: 13,
+                            color: Colors.white70,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 5),
+                            horizontal: 14,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -207,12 +226,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // ── Become a provider CTA (only for tourists) ────────
                   if (_roleLabel == 'Tourist')
                     GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProviderSignupScreen(),
-                        ),
-                      ),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProviderSignupScreen(),
+                          ),
+                        );
+                        // Refresh user data when returning
+                        _loadUser();
+                      },
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
@@ -232,8 +255,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.white.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.storefront_outlined,
-                                  color: Colors.white, size: 24),
+                              child: const Icon(
+                                Icons.storefront_outlined,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             const Expanded(
@@ -253,14 +279,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Text(
                                     'List your services and reach thousands of tourists',
                                     style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white70),
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios,
-                                color: Colors.white70, size: 16),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white70,
+                              size: 16,
+                            ),
                           ],
                         ),
                       ),
@@ -305,7 +335,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.red, width: 1.5),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: _logout,
                       icon: const Icon(Icons.logout, color: Colors.red),
@@ -380,9 +411,10 @@ class _SectionCard extends StatelessWidget {
                       e.value,
                       if (e.key < items.length - 1)
                         const Divider(
-                            height: 1,
-                            indent: 54,
-                            color: Color(0xFFF0F0F0)),
+                          height: 1,
+                          indent: 54,
+                          color: Color(0xFFF0F0F0),
+                        ),
                     ],
                   ),
                 )
@@ -464,8 +496,7 @@ class _TileItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       leading: Icon(icon, color: _green, size: 20),
       title: Text(
         label,
@@ -476,8 +507,11 @@ class _TileItem extends StatelessWidget {
           color: _green,
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios,
-          color: Colors.grey, size: 14),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        color: Colors.grey,
+        size: 14,
+      ),
       onTap: onTap,
     );
   }

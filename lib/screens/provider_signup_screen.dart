@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/provider_service.dart';
+import '../services/auth_service.dart';
 
 // Web-only import
 import 'upload_helper_stub.dart'
@@ -15,15 +16,23 @@ class ProviderSignupScreen extends StatefulWidget {
   State<ProviderSignupScreen> createState() => _ProviderSignupScreenState();
 }
 
+
+
 class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _providerService = ProviderService();
+  final _auth = AuthService();
 
   final businessNameController = TextEditingController();
-  final businessTypeController = TextEditingController();
+  // final businessTypeController = TextEditingController();
   final districtController = TextEditingController();
   final addressController = TextEditingController();
   final descriptionController = TextEditingController();
+
+  String? _selectedCategoryName;
+List<Map<String, dynamic>> _categories = [];
+Map<String, dynamic>? _currentUser;
+bool _loadingInit = true;
 
   // Picked files stored as raw bytes + filename
   Uint8List? _nationalIdBytes;
@@ -41,9 +50,27 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
   static const Color lightGreen = Color(0xFFE3EFE5);
 
   @override
+void initState() {
+  super.initState();
+  _initScreen();
+}
+
+Future<void> _initScreen() async {
+  final results = await Future.wait([
+    _auth.getUser(),
+    _providerService.getCategories(),
+  ]);
+  setState(() {
+    _currentUser = results[0] as Map<String, dynamic>?;
+    _categories = results[1] as List<Map<String, dynamic>>;
+    _loadingInit = false;
+  });
+}
+
+  @override
   void dispose() {
     businessNameController.dispose();
-    businessTypeController.dispose();
+    // businessTypeController.dispose();
     districtController.dispose();
     addressController.dispose();
     descriptionController.dispose();
@@ -101,7 +128,7 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
 
     final registerResult = await _providerService.register({
       'business_name': businessNameController.text.trim(),
-      'business_type': businessTypeController.text.trim(),
+      'business_type': _selectedCategoryName ?? '',
       'district': districtController.text.trim(),
       'address': addressController.text.trim(),
       'description': descriptionController.text.trim(),
@@ -194,7 +221,9 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: _loadingInit
+    ? const Center(child: CircularProgressIndicator(color: green))
+    : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -236,9 +265,53 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
 
               const SizedBox(height: 28),
 
-              _sectionTitle('Business Information'),
-              _inputField('Business Name', businessNameController),
-              _inputField('Business Type', businessTypeController),
+              _sectionTitle('Account'),
+Padding(
+  padding: const EdgeInsets.only(bottom: 16),
+  child: TextFormField(
+    initialValue: _currentUser?['email'] as String? ?? '',
+    readOnly: true,
+    decoration: InputDecoration(
+      labelText: 'Your Account (Email)',
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      suffixIcon: const Icon(Icons.lock_outline, color: Colors.grey, size: 18),
+    ),
+    style: const TextStyle(color: Colors.grey),
+  ),
+),
+_sectionTitle('Business Information'),
+_inputField('Business Name', businessNameController),
+Padding(
+  padding: const EdgeInsets.only(bottom: 16),
+  child: DropdownButtonFormField<String>(
+    value: _selectedCategoryName,
+    decoration: InputDecoration(
+      labelText: 'Business Type',
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+    ),
+    hint: const Text('Select business type'),
+    items: _categories.map((cat) {
+      return DropdownMenuItem<String>(
+        value: cat['name'] as String,
+        child: Text(cat['name'] as String),
+      );
+    }).toList(),
+    onChanged: (v) => setState(() => _selectedCategoryName = v),
+    validator: (v) => v == null ? 'Please select a business type' : null,
+  ),
+),
               _inputField('District', districtController),
               _inputField('Business Address', addressController),
               _inputField('Business Description', descriptionController,

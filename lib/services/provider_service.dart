@@ -16,16 +16,48 @@ class ProviderService {
     };
   }
 
+  Future<List<Map<String, dynamic>>> getCategories() async {
+  try {
+    final headers = await _authHeaders;
+    final response = await http.get(
+      Uri.parse('$baseUrl/categories'),
+      headers: headers,
+    );
+    final decoded = json.decode(response.body);
+    if (decoded is List) {
+      return decoded.cast<Map<String, dynamic>>();
+    }
+    return [];
+  } catch (e) {
+    return [];
+  }
+}
+
   // Step 1: Register business info
-  Future<Map<String, dynamic>> register(Map<String, String> data) async {
+Future<Map<String, dynamic>> register(Map<String, String> data) async {
+  try {
     final headers = await _authHeaders;
     final response = await http.post(
       Uri.parse('$baseUrl/provider/register'),
       headers: headers,
       body: data,
     );
-    return json.decode(response.body);
+
+    print('REGISTER STATUS: ${response.statusCode}');
+    print('REGISTER BODY: ${response.body}');
+
+    final decoded = json.decode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return decoded;
+    } else {
+      return {'error': decoded['message'] ?? 'Registration failed (${response.statusCode})'};
+    }
+  } catch (e) {
+    print('REGISTER ERROR: $e');
+    return {'error': e.toString()};
   }
+}
 
   // Step 2: Upload documents using PlatformFile (from file_picker)
   Future<Map<String, dynamic>> uploadDocuments({
