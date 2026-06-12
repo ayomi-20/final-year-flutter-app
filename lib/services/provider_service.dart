@@ -156,4 +156,22 @@ Future<Map<String, dynamic>> register(Map<String, String> data) async {
   final response = await http.Response.fromStream(streamed);
   return json.decode(response.body);
 }
+
+Future<Map<String, dynamic>> updateApplication(
+    Map<String, String> data) async {
+  try {
+    final headers = await _authHeaders;
+    final response = await http.patch(
+      Uri.parse('$baseUrl/provider/update'),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(data),
+    );
+    return json.decode(response.body);
+  } catch (e) {
+    return {'error': 'Connection error: $e'};
+  }
+}
 }

@@ -1,7 +1,11 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
+import 'package:flutter/material.dart';
 import 'authentication_screen.dart';
 import 'provider_signup_screen.dart';
+import '../services/dashboard_service.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +18,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _auth = AuthService();
   Map<String, dynamic>? _user;
   bool _loading = true;
+  String? _providerStatus;
+  Map<String, dynamic>? _providerData;
 
   static const Color _green = Color(0xFF0F3B2E);
   static const Color _lightGreen = Color(0xFFE3EFE5);
@@ -25,12 +31,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUser() async {
-    final user = await _auth.getUser();
-    setState(() {
-      _user = user;
-      _loading = false;
-    });
-  }
+  final user = await _auth.getUser();
+  setState(() {
+    _user = user;
+  });
+
+  // Fetch fresh user data including provider status from API
+  try {
+    final token = await _auth.getToken();
+    if (token != null) {
+      final response = await http.get(
+        Uri.parse('${AuthService.baseUrl}/user'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final fresh = json.decode(response.body) as Map<String, dynamic>;
+        await _auth.saveUser(fresh);
+        setState(() {
+          _user = fresh;
+          _providerData = fresh['provider'] as Map<String, dynamic>?;
+          _providerStatus = _providerData?['status'] as String?;
+          _loading = false;
+        });
+        return;
+      }
+    }
+  } catch (_) {}
+
+  setState(() {
+    _providerData = user?['provider'] as Map<String, dynamic>?;
+    _providerStatus = _providerData?['status'] as String?;
+    _loading = false;
+  });
+}
 
   String get _fullName {
     if (_user == null) return 'User';
@@ -224,77 +260,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
 
                   // ── Become a provider CTA (only for tourists) ────────
-                  if (_roleLabel == 'Tourist')
-                    GestureDetector(
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ProviderSignupScreen(),
-                          ),
-                        );
-                        // Refresh user data when returning
-                        _loadUser();
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1C5E4A), Color(0xFF0F3B2E)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.storefront_outlined,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Become a Service Provider',
-                                    style: TextStyle(
-                                      fontFamily: 'IBMPlexSerif',
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SizedBox(height: 3),
-                                  Text(
-                                    'List your services and reach thousands of tourists',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white70,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // Replace the existing CTA section with this:
+if (_roleLabel == 'Tourist' || _providerStatus == 'rejected') ...[
+  GestureDetector(
+    onTap: () async {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProviderSignupScreen(
+            existingProvider: _providerStatus == 'rejected' ? _providerData : null,
+          ),
+        ),
+      );
+      _loadUser();
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _providerStatus == 'rejected'
+              ? [const Color(0xFF8B0000), const Color(0xFF5C0000)]
+              : [const Color(0xFF1C5E4A), const Color(0xFF0F3B2E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _providerStatus == 'rejected'
+                  ? Icons.refresh
+                  : Icons.storefront_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _providerStatus == 'rejected'
+                      ? 'Reapply as Service Provider'
+                      : 'Become a Service Provider',
+                  style: const TextStyle(
+                    fontFamily: 'IBMPlexSerif',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  _providerStatus == 'rejected'
+                      ? 'Your previous application was rejected. Tap to update and resubmit.'
+                      : 'List your services and reach thousands of tourists',
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+        ],
+      ),
+    ),
+  ),
+  const SizedBox(height: 16),
+],
+
+// Show pending status message
+if (_providerStatus == 'pending') ...[
+  Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.orange.shade50,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.orange.shade200),
+    ),
+    child: Row(
+      children: [
+        Icon(Icons.hourglass_top, color: Colors.orange.shade700, size: 24),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Application Under Review',
+                  style: TextStyle(fontFamily: 'IBMPlexSerif',
+                      fontSize: 15, fontWeight: FontWeight.w700,
+                      color: Colors.orange.shade700)),
+              const SizedBox(height: 3),
+              const Text('Your provider application is being reviewed by our team.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54)),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ),
+  const SizedBox(height: 16),
+],
 
                   if (_roleLabel == 'Tourist') const SizedBox(height: 16),
 

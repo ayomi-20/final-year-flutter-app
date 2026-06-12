@@ -10,13 +10,13 @@ import 'upload_helper_stub.dart'
     if (dart.library.html) 'upload_helper_web.dart';
 
 class ProviderSignupScreen extends StatefulWidget {
-  const ProviderSignupScreen({super.key});
+  final Map<String, dynamic>? existingProvider;
+
+  const ProviderSignupScreen({super.key, this.existingProvider});
 
   @override
   State<ProviderSignupScreen> createState() => _ProviderSignupScreenState();
 }
-
-
 
 class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -30,9 +30,9 @@ class _ProviderSignupScreenState extends State<ProviderSignupScreen> {
   final descriptionController = TextEditingController();
 
   String? _selectedCategoryName;
-List<Map<String, dynamic>> _categories = [];
-Map<String, dynamic>? _currentUser;
-bool _loadingInit = true;
+  List<Map<String, dynamic>> _categories = [];
+  Map<String, dynamic>? _currentUser;
+  bool _loadingInit = true;
 
   // Picked files stored as raw bytes + filename
   Uint8List? _nationalIdBytes;
@@ -50,22 +50,31 @@ bool _loadingInit = true;
   static const Color lightGreen = Color(0xFFE3EFE5);
 
   @override
-void initState() {
-  super.initState();
-  _initScreen();
-}
+  void initState() {
+    super.initState();
+    // Pre-fill fields if editing an existing application
+    final existing = widget.existingProvider;
+    if (existing != null) {
+      businessNameController.text = existing['business_name'] ?? '';
+      _selectedCategoryName = (existing['business_type'] as String?)?.trim();
+      districtController.text = existing['district'] ?? '';
+      addressController.text = existing['address'] ?? '';
+      descriptionController.text = existing['description'] ?? '';
+    }
+    _initScreen(); // ← this was missing
+  }
 
-Future<void> _initScreen() async {
-  final results = await Future.wait([
-    _auth.getUser(),
-    _providerService.getCategories(),
-  ]);
-  setState(() {
-    _currentUser = results[0] as Map<String, dynamic>?;
-    _categories = results[1] as List<Map<String, dynamic>>;
-    _loadingInit = false;
-  });
-}
+  Future<void> _initScreen() async {
+    final results = await Future.wait([
+      _auth.getUser(),
+      _providerService.getCategories(),
+    ]);
+    setState(() {
+      _currentUser = results[0] as Map<String, dynamic>?;
+      _categories = results[1] as List<Map<String, dynamic>>;
+      _loadingInit = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -126,24 +135,41 @@ Future<void> _initScreen() async {
 
     setState(() => _submitting = true);
 
-    final registerResult = await _providerService.register({
-      'business_name': businessNameController.text.trim(),
-      'business_type': _selectedCategoryName ?? '',
-      'district': districtController.text.trim(),
-      'address': addressController.text.trim(),
-      'description': descriptionController.text.trim(),
-    });
+    final isEditing = widget.existingProvider != null;
+
+    Map<String, dynamic> result;
+
+    if (isEditing) {
+      // Update existing application
+      result = await _providerService.updateApplication({
+        'business_name': businessNameController.text.trim(),
+        'business_type': _selectedCategoryName ?? '',
+        'district': districtController.text.trim(),
+        'address': addressController.text.trim(),
+        'description': descriptionController.text.trim(),
+      });
+    } else {
+      // New application
+      result = await _providerService.register({
+        'business_name': businessNameController.text.trim(),
+        'business_type': _selectedCategoryName ?? '',
+        'district': districtController.text.trim(),
+        'address': addressController.text.trim(),
+        'description': descriptionController.text.trim(),
+      });
+    }
 
     if (!mounted) return;
 
-    if (registerResult['error'] != null) {
+    if (result['error'] != null) {
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(registerResult['error'])),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result['error'])));
       return;
     }
 
+    // Upload documents if any were picked
     if (_nationalIdBytes != null ||
         _tradingLicenseBytes != null ||
         _logoBytes != null) {
@@ -160,13 +186,14 @@ Future<void> _initScreen() async {
 
       if (uploadResult['error'] != null) {
         setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(uploadResult['error'])),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(uploadResult['error'])));
         return;
       }
     }
 
+    // Submit for review
     await _providerService.submit();
 
     if (!mounted) return;
@@ -175,12 +202,12 @@ Future<void> _initScreen() async {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text(
-          'Application Submitted',
-          style: TextStyle(
+        title: Text(
+          isEditing ? 'Application Resubmitted' : 'Application Submitted',
+          style: const TextStyle(
             fontFamily: 'IBMPlexSerif',
             fontWeight: FontWeight.w700,
-            color: green,
+            color: Color(0xFF0F3B2E),
           ),
         ),
         content: const Text(
@@ -189,7 +216,9 @@ Future<void> _initScreen() async {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: green),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F3B2E),
+            ),
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
@@ -212,170 +241,202 @@ Future<void> _initScreen() async {
           icon: const Icon(Icons.arrow_back, color: green),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Become a Provider',
-          style: TextStyle(
+        title: Text(
+          widget.existingProvider != null
+              ? 'Update Application'
+              : 'Become a Provider',
+          style: const TextStyle(
             fontFamily: 'IBMPlexSerif',
             fontWeight: FontWeight.w700,
-            color: green,
+            color: Color(0xFF0F3B2E),
           ),
         ),
       ),
       body: _loadingInit
-    ? const Center(child: CircularProgressIndicator(color: green))
-    : SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1C5E4A), green],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ? const Center(child: CircularProgressIndicator(color: green))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
                   children: [
-                    Icon(Icons.storefront_outlined,
-                        color: Colors.white, size: 42),
-                    SizedBox(height: 14),
-                    Text(
-                      'Grow Your Tourism Business',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'IBMPlexSerif',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1C5E4A), green],
+                        ),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.storefront_outlined,
+                            color: Colors.white,
+                            size: 42,
+                          ),
+                          SizedBox(height: 14),
+                          Text(
+                            'Grow Your Tourism Business',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'IBMPlexSerif',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 22,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Join Twende Uganda and connect with thousands '
+                            'of tourists looking for amazing experiences.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Join Twende Uganda and connect with thousands '
-                      'of tourists looking for amazing experiences.',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+
+                    const SizedBox(height: 28),
+
+                    _sectionTitle('Account'),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: TextFormField(
+                        initialValue: _currentUser?['email'] as String? ?? '',
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Your Account (Email)',
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
+                        ),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ),
+                    _sectionTitle('Business Information'),
+                    _inputField('Business Name', businessNameController),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategoryName,
+                        decoration: InputDecoration(
+                          labelText: 'Business Type',
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        hint: const Text('Select business type'),
+                        items: _categories
+                            .map((cat) => (cat['name'] as String).trim())
+                            .toSet() // removes duplicates
+                            .map(
+                              (name) => DropdownMenuItem<String>(
+                                value: name,
+                                child: Text(name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedCategoryName = v),
+                        validator: (v) =>
+                            v == null ? 'Please select a business type' : null,
+                      ),
+                    ),
+                    _inputField('District', districtController),
+                    _inputField('Business Address', addressController),
+                    _inputField(
+                      'Business Description',
+                      descriptionController,
+                      maxLines: 4,
+                      required: false,
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    _sectionTitle('Verification Documents'),
+
+                    _UploadBox(
+                      icon: Icons.badge_outlined,
+                      title: 'National ID',
+                      subtitle:
+                          'Upload a clear image of your ID (JPG, PNG, PDF)',
+                      fileName: _nationalIdName,
+                      onTap: () => _pickFile('national_id'),
+                    ),
+
+                    _UploadBox(
+                      icon: Icons.business_outlined,
+                      title: 'Trading License',
+                      subtitle: 'Upload your business license (JPG, PNG, PDF)',
+                      fileName: _tradingLicenseName,
+                      onTap: () => _pickFile('trading_license'),
+                    ),
+
+                    _UploadBox(
+                      icon: Icons.photo_camera_outlined,
+                      title: 'Business Logo or Photo',
+                      subtitle: 'Upload your logo or business image (JPG, PNG)',
+                      fileName: _logoName,
+                      onTap: () => _pickFile('logo'),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _submitting ? null : _submit,
+                        child: _submitting
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                'Submit Application',
+                                style: TextStyle(
+                                  fontFamily: 'IBMPlexSerif',
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              _sectionTitle('Account'),
-Padding(
-  padding: const EdgeInsets.only(bottom: 16),
-  child: TextFormField(
-    initialValue: _currentUser?['email'] as String? ?? '',
-    readOnly: true,
-    decoration: InputDecoration(
-      labelText: 'Your Account (Email)',
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      suffixIcon: const Icon(Icons.lock_outline, color: Colors.grey, size: 18),
-    ),
-    style: const TextStyle(color: Colors.grey),
-  ),
-),
-_sectionTitle('Business Information'),
-_inputField('Business Name', businessNameController),
-Padding(
-  padding: const EdgeInsets.only(bottom: 16),
-  child: DropdownButtonFormField<String>(
-    value: _selectedCategoryName,
-    decoration: InputDecoration(
-      labelText: 'Business Type',
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-    ),
-    hint: const Text('Select business type'),
-    items: _categories.map((cat) {
-      return DropdownMenuItem<String>(
-        value: cat['name'] as String,
-        child: Text(cat['name'] as String),
-      );
-    }).toList(),
-    onChanged: (v) => setState(() => _selectedCategoryName = v),
-    validator: (v) => v == null ? 'Please select a business type' : null,
-  ),
-),
-              _inputField('District', districtController),
-              _inputField('Business Address', addressController),
-              _inputField('Business Description', descriptionController,
-                  maxLines: 4, required: false),
-
-              const SizedBox(height: 10),
-
-              _sectionTitle('Verification Documents'),
-
-              _UploadBox(
-                icon: Icons.badge_outlined,
-                title: 'National ID',
-                subtitle: 'Upload a clear image of your ID (JPG, PNG, PDF)',
-                fileName: _nationalIdName,
-                onTap: () => _pickFile('national_id'),
-              ),
-
-              _UploadBox(
-                icon: Icons.business_outlined,
-                title: 'Trading License',
-                subtitle: 'Upload your business license (JPG, PNG, PDF)',
-                fileName: _tradingLicenseName,
-                onTap: () => _pickFile('trading_license'),
-              ),
-
-              _UploadBox(
-                icon: Icons.photo_camera_outlined,
-                title: 'Business Logo or Photo',
-                subtitle: 'Upload your logo or business image (JPG, PNG)',
-                fileName: _logoName,
-                onTap: () => _pickFile('logo'),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: green,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Submit Application',
-                          style: TextStyle(
-                            fontFamily: 'IBMPlexSerif',
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -410,15 +471,17 @@ Padding(
         maxLines: maxLines,
         validator: required
             ? (v) => (v == null || v.trim().isEmpty)
-                ? 'This field is required'
-                : null
+                  ? 'This field is required'
+                  : null
             : null,
         decoration: InputDecoration(
           labelText: label,
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -497,8 +560,7 @@ class _UploadBox extends StatelessWidget {
                   style: TextStyle(
                     color: picked ? green : Colors.grey.shade600,
                     fontSize: 12,
-                    fontWeight:
-                        picked ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: picked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ],
