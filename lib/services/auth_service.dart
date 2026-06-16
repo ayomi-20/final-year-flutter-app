@@ -95,6 +95,19 @@ class AuthService {
     return res;
   }
 
+  Future<Map<String, dynamic>> resendOtp(Map<String, String> data) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/resend-otp'),
+      headers: {'Accept': 'application/json'},
+      body: data,
+    ).timeout(const Duration(seconds: 15));
+    return json.decode(response.body);
+  } catch (e) {
+    return {'message': 'Connection error: $e'};
+  }
+}
+
   Future<Map<String, dynamic>> forgotPassword(Map<String, String> data) async {
     final response = await http.post(
       Uri.parse('$baseUrl/forgot-password'),

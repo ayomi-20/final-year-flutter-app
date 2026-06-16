@@ -642,22 +642,19 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   void _handleResend() async {
-    // Note: You may need to implement a 'resendLoginOtp' method in your AuthService
-    // or call the login method again if your backend supports it without password re-entry.
-    
-    setState(() => _loading = true);
-    
-    // Mocking API call for UI demonstration
-    // await _auth.resendOtp({'email': widget.emailNotifier.value}); 
-    await Future.delayed(const Duration(seconds: 1));
+  setState(() => _loading = true);
 
-    setState(() => _loading = false);
-    if (!mounted) return;
+  final res = await _auth.resendOtp({
+    'email': widget.emailNotifier.value,
+  });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Code sent')),
-    );
-  }
+  setState(() => _loading = false);
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(res['message'] ?? 'Code sent')),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
