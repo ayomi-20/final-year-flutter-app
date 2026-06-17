@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
+import 'main_screen.dart';
 
 // ─── Background images per auth step ───
 const _kAuthBg = 'assets/images/auth_bg.png';
@@ -627,7 +628,7 @@ class _OtpPageState extends State<OtpPage> {
                 // NAVIGATE TO HOME SCREEN DIRECTLY FROM HERE
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => const MainScreen(),),
                 );
                 
                 // Optional: Call parent callback if it does any cleanup

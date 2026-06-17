@@ -4,8 +4,11 @@ import '../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'authentication_screen.dart';
 import 'provider_signup_screen.dart';
-import '../services/dashboard_service.dart';
-
+// import '../services/dashboard_service.dart';
+import 'notifications_screen.dart';
+import 'help_support_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,42 +34,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUser() async {
-  final user = await _auth.getUser();
-  setState(() {
-    _user = user;
-  });
+    final user = await _auth.getUser();
+    setState(() {
+      _user = user;
+    });
 
-  // Fetch fresh user data including provider status from API
-  try {
-    final token = await _auth.getToken();
-    if (token != null) {
-      final response = await http.get(
-        Uri.parse('${AuthService.baseUrl}/user'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        final fresh = json.decode(response.body) as Map<String, dynamic>;
-        await _auth.saveUser(fresh);
-        setState(() {
-          _user = fresh;
-          _providerData = fresh['provider'] as Map<String, dynamic>?;
-          _providerStatus = _providerData?['status'] as String?;
-          _loading = false;
-        });
-        return;
+    // Fetch fresh user data including provider status from API
+    try {
+      final token = await _auth.getToken();
+      if (token != null) {
+        final response = await http.get(
+          Uri.parse('${AuthService.baseUrl}/user'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+        if (response.statusCode == 200) {
+          final fresh = json.decode(response.body) as Map<String, dynamic>;
+          await _auth.saveUser(fresh);
+          setState(() {
+            _user = fresh;
+            _providerData = fresh['provider'] as Map<String, dynamic>?;
+            _providerStatus = _providerData?['status'] as String?;
+            _loading = false;
+          });
+          return;
+        }
       }
-    }
-  } catch (_) {}
+    } catch (_) {}
 
-  setState(() {
-    _providerData = user?['provider'] as Map<String, dynamic>?;
-    _providerStatus = _providerData?['status'] as String?;
-    _loading = false;
-  });
-}
+    setState(() {
+      _providerData = user?['provider'] as Map<String, dynamic>?;
+      _providerStatus = _providerData?['status'] as String?;
+      _loading = false;
+    });
+  }
 
   String get _fullName {
     if (_user == null) return 'User';
@@ -261,115 +264,145 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // ── Become a provider CTA (only for tourists) ────────
                   // Replace the existing CTA section with this:
-if (_roleLabel == 'Tourist' || _providerStatus == 'rejected') ...[
-  GestureDetector(
-    onTap: () async {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProviderSignupScreen(
-            existingProvider: _providerStatus == 'rejected' ? _providerData : null,
-          ),
-        ),
-      );
-      _loadUser();
-    },
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _providerStatus == 'rejected'
-              ? [const Color(0xFF8B0000), const Color(0xFF5C0000)]
-              : [const Color(0xFF1C5E4A), const Color(0xFF0F3B2E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _providerStatus == 'rejected'
-                  ? Icons.refresh
-                  : Icons.storefront_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _providerStatus == 'rejected'
-                      ? 'Reapply as Service Provider'
-                      : 'Become a Service Provider',
-                  style: const TextStyle(
-                    fontFamily: 'IBMPlexSerif',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  _providerStatus == 'rejected'
-                      ? 'Your previous application was rejected. Tap to update and resubmit.'
-                      : 'List your services and reach thousands of tourists',
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-        ],
-      ),
-    ),
-  ),
-  const SizedBox(height: 16),
-],
+                  if (_roleLabel == 'Tourist' ||
+                      _providerStatus == 'rejected') ...[
+                    GestureDetector(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProviderSignupScreen(
+                              existingProvider: _providerStatus == 'rejected'
+                                  ? _providerData
+                                  : null,
+                            ),
+                          ),
+                        );
+                        _loadUser();
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: _providerStatus == 'rejected'
+                                ? [
+                                    const Color(0xFF8B0000),
+                                    const Color(0xFF5C0000),
+                                  ]
+                                : [
+                                    const Color(0xFF1C5E4A),
+                                    const Color(0xFF0F3B2E),
+                                  ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                _providerStatus == 'rejected'
+                                    ? Icons.refresh
+                                    : Icons.storefront_outlined,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _providerStatus == 'rejected'
+                                        ? 'Reapply as Service Provider'
+                                        : 'Become a Service Provider',
+                                    style: const TextStyle(
+                                      fontFamily: 'IBMPlexSerif',
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 3),
+                                  Text(
+                                    _providerStatus == 'rejected'
+                                        ? 'Your previous application was rejected. Tap to update and resubmit.'
+                                        : 'List your services and reach thousands of tourists',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white70,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
-// Show pending status message
-if (_providerStatus == 'pending') ...[
-  Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.orange.shade50,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.orange.shade200),
-    ),
-    child: Row(
-      children: [
-        Icon(Icons.hourglass_top, color: Colors.orange.shade700, size: 24),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Application Under Review',
-                  style: TextStyle(fontFamily: 'IBMPlexSerif',
-                      fontSize: 15, fontWeight: FontWeight.w700,
-                      color: Colors.orange.shade700)),
-              const SizedBox(height: 3),
-              const Text('Your provider application is being reviewed by our team.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54)),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ),
-  const SizedBox(height: 16),
-],
+                  // Show pending status message
+                  if (_providerStatus == 'pending') ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.hourglass_top,
+                            color: Colors.orange.shade700,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Application Under Review',
+                                  style: TextStyle(
+                                    fontFamily: 'IBMPlexSerif',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.orange.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                const Text(
+                                  'Your provider application is being reviewed by our team.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   if (_roleLabel == 'Tourist') const SizedBox(height: 16),
 
@@ -380,22 +413,52 @@ if (_providerStatus == 'pending') ...[
                       _TileItem(
                         icon: Icons.notifications_outlined,
                         label: 'Notifications',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _TileItem(
                         icon: Icons.help_outline,
                         label: 'Help & Support',
-                        onTap: () {},
+                        onTap: () {
+                          print('HELP TAPPED');
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HelpSupportScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _TileItem(
                         icon: Icons.privacy_tip_outlined,
                         label: 'Privacy Policy',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PrivacyPolicyScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _TileItem(
                         icon: Icons.info_outline,
                         label: 'About Twende Uganda',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AboutScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
