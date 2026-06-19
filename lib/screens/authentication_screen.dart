@@ -4,9 +4,9 @@ import 'home_screen.dart';
 import 'main_screen.dart';
 
 // ─── Background images per auth step ───
-const _kAuthBg = 'assets/images/auth_bg.png';
+const _kAuthBg = 'assets/images/register.jpeg';
 // const _kForgotBg = 'assets/images/forgot_bg.png';
-const _kLoginBg = 'assets/images/login_bg.png';
+const _kLoginBg = 'assets/images/login_bg.jpeg';
 const _kForgotStep1Bg = 'assets/images/forgotpassword_bg.png';
 const _kVerifyBg = 'assets/images/verify_code_bg.png';
 const _kResetBg = 'assets/images/crested-crane.jpg';
@@ -71,7 +71,6 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   }
 }
 
-// ─────────────────── Auth Card (glass overlay) ───────────────────
 // ─────────────────── Auth Card (glass overlay) ───────────────────
 class AuthCard extends StatelessWidget {
   final Widget child;

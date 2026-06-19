@@ -70,8 +70,9 @@ flutter:
     - assets/images/onboard1.png
     - assets/images/onboard2.png
     - assets/images/onboard3.png
-    - assets/images/auth_bg.png
+    - assets/images/register.jpeg
     - assets/images/login_bg.png
+    - assets/images/login_bg.jpeg
     - assets/images/forgotpassword_bg.png
     - assets/images/verify_code_bg.png
     - assets/images/car_hire_icon.png
